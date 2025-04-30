@@ -19,10 +19,9 @@ const login = require("./imports/login");
 process.env.BLUEBIRD_W_FORGOTTEN_RETURN = 0;
 const app = new express();
 app.set("view engine", "ejs");
-app.use(require(path.join(
-  __dirname, "routes", "root.js"
-)));
+app.use(require(path.join(__dirname, "routes", "root.js")));
 
+// Define global.Sora object
 global.Sora = new Object({
   startTime: new Date(),
   get config() {
@@ -35,20 +34,24 @@ global.Sora = new Object({
     const finalData = {
       ...data,
       ...config
-    }
+    };
     const str = JSON.stringify(finalData, null, 2);
-    fs.writeFileSync(path.join(__dirname, "config.json"), str);
+    fs.writeFileSync(path.join(__dirname, "json", "config.json"), str);
   },
-  botPrefix: global.Sora.config.botPrefix,
-  botAdmins: global.Sora.config.botAdmins,
   commands: new Map(),
   events: new Map(),
   cooldowns: {},
   reactions: {},
 });
 
+// Assign prefix and admin IDs after Sora is initialized
+global.Sora.botPrefix = global.Sora.config.botPrefix;
+global.Sora.botAdmins = global.Sora.config.botAdmins;
+
+// Shortcut to config
 const config = global.Sora.config;
 
+// Global Data
 global.Data = new Object({
   currentUserID: null,
   allUsersID: null,
@@ -56,13 +59,13 @@ global.Data = new Object({
   adminInfos: new Map(),
 });
 
+// Main start function
 async function start() {
   const utils = require("./utils");
   global.utils = utils;
+
   const appState = fs.readJSONSync(
-    path.join(
-      __dirname, 'json', 'state.json'
-    )
+    path.join(__dirname, 'json', 'state.json')
   );
 
   figlet.text("SoraV2", (err, data) => {
@@ -71,26 +74,24 @@ async function start() {
     console.log(chalk.cyan(data));
     console.log(chalk.blue(`> Bot Name: [ ${config.botName} ]`));
     console.log(chalk.blue(`> Bot Prefix: [ ${config.botPrefix} ]`));
-    console.log(chalk.blue(`> Current Time: [ ${new Date().toLocaleTimeString ()} ]`));
+    console.log(chalk.blue(`> Current Time: [ ${new Date().toLocaleTimeString()} ]`));
     console.log();
 
-    login({
-      appState
-    }, (err, api) => {
+    login({ appState }, (err, api) => {
       if (err) return logger.error(err);
 
       api.setOptions(config.fcaOptions);
 
-      api.listen(async, (err, event) => {
+      api.listen(async (err, event) => {
         if (err) return logger.error(err);
 
         if (event.senderID !== api.getCurrentUserID()) {
           const listener = require("./imports/listener");
           listener({ api, event });
-        };
+        }
       });
     });
   });
-};
+}
 
 start();
