@@ -10,7 +10,7 @@
     "autoMarkDelivery": false,
     "autoMarkRead": false
   },
-  "botName": "SoraV1",
-  "botPrefix": "/",
-  "botAdmins": []
+  "botName": "Kiether",
+  "botPrefix": "-",
+  "botAdmins": [100075247455712]
 }
