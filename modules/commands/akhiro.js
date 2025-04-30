@@ -8,18 +8,18 @@ module.exports = {
     description: "Talk to AkhiroAI",
     usage: "{p}akhiro [query]"
   },
-  async onRun ({ api, event, args }){
+  async onRun({ api, event, args }) {
     const query = args.join(" ");
     if (!query) {
-      return api.sendMessage(`ℹ️ | Please create a question.`, event.threadID, event.messageID)
+      return api.sendMessage(`ℹ️ | Please create a question.`, event.threadID, event.messageID);
     }
     try {
-      const response = await axios.get(`https://akhiro-rest-api.onrender.com/api/akhiro?q=${encodeURIComponnent(query)}`);
+      const response = await axios.get(`https://akhiro-rest-api.onrender.com/api/akhiro?q=${encodeURIComponent(query)}`);
       const answer = response.data.content;
-      api.sendMessage(answer, event.threadID, event.messageID)
+      api.sendMessage(answer, event.threadID, event.messageID);
     } catch (error) {
       console.log(error);
-      api.sendMessage("Error: " + error.message, event.threadID, event.messageID)
+      api.sendMessage("Error: " + error.message, event.threadID, event.messageID);
     }
   }
 }
