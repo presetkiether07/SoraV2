@@ -1,14 +1,15 @@
-module.exports = async ({
-  api, event
-}) => {
+module.exports = async ({ api, event }) => {
   const logger = require("./logger");
-  const onRun = require("./onFuncs/onRun");
+  const onRun = require("./onFuncs/onRun"); // Kung wala ito, okay lang muna tanggalin
 
-  (async () => {
-    global.Data.currentUserID = api.getCurrentUserID();
-  })();
+  // Init user ID
+  global.Data.currentUserID = api.getCurrentUserID();
 
-  const message = new Object({
+  // Reaction system
+  const reactions = global.Sora.reactions || {};
+  global.Sora.reactions = reactions;
+
+  const message = {
     react: (emoji) => {
       api.setMessageReaction(emoji, event.messageID, () => {}, true);
     },
@@ -22,19 +23,17 @@ module.exports = async ({
         );
       });
     },
-    add: (uid) => {
-      api.addUserToGroup(uid, event.threadID);
-    },
-    kick: (uid) => {
-      api.removeUserFromGroup(uid, event.threadID);
-    },
+    add: (uid) => api.addUserToGroup(uid, event.threadID),
+    kick: (uid) => api.removeUserFromGroup(uid, event.threadID),
     send: (msg) => {
       return new Promise((res) => {
         api.sendMessage(msg, event.threadID, (_, info) => res(info));
       });
     },
     edit: (msg, mid) => {
-      return new Promise((res) => api.editMessage(msg, mid, () => res(true)));
+      return new Promise((res) => {
+        api.editMessage(msg, mid, () => res(true));
+      });
     },
     waitForReaction: (body, next = "") => {
       return new Promise(async (resolve, reject) => {
@@ -46,12 +45,13 @@ module.exports = async ({
           next,
           author: event.senderID,
         };
-        logger.info(`New pending reaction at: `, i, reactions);
+        logger.info(`New pending reaction at: `, i);
       });
     },
-  });
+  };
 
-  if (event.type == "message_reaction" && reactions[event.messageID]) {
+  // Reaction Handler
+  if (event.type === "message_reaction" && reactions[event.messageID]) {
     logger.info(`Detected Reaction at ${event.messageID}`);
     const {
       resolve,
@@ -60,31 +60,29 @@ module.exports = async ({
       author,
       next,
     } = reactions[event.messageID];
+
     try {
       if (author === event.userID) {
-        logger.info(
-          `${event.reaction} Resolved Reaction at ${event.messageID}`,
-        );
+        logger.info(`${event.reaction} Resolved Reaction at ${event.messageID}`);
         delete reactions[event.messageID];
         if (next) {
-          message.edit(next, i.messageID);
+          await message.edit(next, i.messageID);
         }
-
         resolve?.(event);
       } else {
-        logger.info(
-          `${event.reaction} Pending Reaction at ${event.messageID} as author got reacted`,
-        );
+        logger.info(`${event.reaction} Ignored: Different user`);
       }
     } catch (err) {
-      logger.info(err);
+      logger.error(err);
       reject?.(err);
-    } finally {}
+    }
+    return;
   }
 
-  switch (event.type) {
-    case "message":
-
-      break;
-  };
+  // Message Handler
+  if (event.type === "message") {
+    // Placeholder: dito mo ilalagay ang command handler mo
+    // example:
+    // require("./commandHandler")({ api, event, message });
+  }
 };
